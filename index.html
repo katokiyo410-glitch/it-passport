@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#6C63FF">
+<title>ITパスポート 勉強アプリ</title>
+<style>
+:root{
+  --primary:#6C63FF;
+  --primary-dark:#564fd8;
+  --primary-light:#eeecff;
+  --correct:#22c55e;
+  --wrong:#ef4444;
+  --bg:#f6f5fb;
+  --card-bg:#ffffff;
+  --text:#25233a;
+  --text-sub:#6b6880;
+  --border:#e5e3f2;
+  --radius:16px;
+  --radius-sm:12px;
+  --shadow:0 4px 16px rgba(76,70,140,0.10);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP","Hiragino Sans",Meiryo,sans-serif;
+  padding-bottom:32px;
+  min-height:100vh;
+}
+#app{max-width:520px;margin:0 auto;padding:0 14px;}
+
+header{
+  padding:22px 4px 14px;
+  text-align:center;
+}
+header h1{
+  margin:0 0 4px;
+  font-size:1.5rem;
+  font-weight:800;
+  color:var(--primary-dark);
+  letter-spacing:0.02em;
+}
+header p{
+  margin:0;
+  font-size:0.82rem;
+  color:var(--text-sub);
+}
+
+.stats-bar{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin-bottom:14px;
+}
+.stat-card{
+  background:var(--card-bg);
+  border-radius:var(--radius-sm);
+  padding:10px 4px;
+  text-align:center;
+  box-shadow:var(--shadow);
+}
+.stat-card .num{
+  font-size:1.25rem;
+  font-weight:800;
+  color:var(--primary-dark);
+  line-height:1.1;
+}
+.stat-card.due .num{color:var(--wrong);}
+.stat-card.mastered .num{color:var(--correct);}
+.stat-card .label{
+  font-size:0.62rem;
+  color:var(--text-sub);
+  margin-top:2px;
+  white-space:nowrap;
+}
+
+.mode-tabs{
+  display:flex;
+  gap:6px;
+  background:var(--card-bg);
+  padding:5px;
+  border-radius:14px;
+  box-shadow:var(--shadow);
+  margin-bottom:12px;
+}
+.mode-tab{
+  flex:1;
+  border:none;
+  background:transparent;
+  padding:10px 4px;
+  border-radius:10px;
+  font-size:0.76rem;
+  font-weight:700;
+  color:var(--text-sub);
+  cursor:pointer;
+  min-height:44px;
+  transition:background .15s, color .15s;
+}
+.mode-tab.active{
+  background:var(--primary);
+  color:#fff;
+}
+.mode-tab .badge{
+  display:inline-block;
+  margin-left:3px;
+  background:var(--wrong);
+  color:#fff;
+  border-radius:8px;
+  font-size:0.6rem;
+  padding:1px 5px;
+  vertical-align:middle;
+}
+.mode-tab.active .badge{background:rgba(255,255,255,0.35);}
+
+.cat-filter{
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  padding:2px 2px 12px;
+  scrollbar-width:none;
+}
+.cat-filter::-webkit-scrollbar{display:none;}
+.cat-chip{
+  flex:0 0 auto;
+  border:1px solid var(--border);
+  background:var(--card-bg);
+  color:var(--text-sub);
+  padding:7px 14px;
+  border-radius:999px;
+  font-size:0.74rem;
+  font-weight:600;
+  white-space:nowrap;
+  cursor:pointer;
+  min-height:32px;
+}
+.cat-chip.active{
+  background:var(--primary);
+  border-color:var(--primary);
+  color:#fff;
+}
+
+.progress-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:12px;
+  font-size:0.76rem;
+  color:var(--text-sub);
+}
+.progress-bar-track{
+  flex:1;
+  height:6px;
+  background:var(--border);
+  border-radius:999px;
+  overflow:hidden;
+}
+.progress-bar-fill{
+  height:100%;
+  background:var(--primary);
+  border-radius:999px;
+  transition:width .25s;
+}
+
+/* ---- Flashcard ---- */
+.flash-wrap{display:none;}
+.flash-wrap.active{display:block;}
+.flash-cat-tag{
+  display:inline-block;
+  font-size:0.68rem;
+  font-weight:700;
+  color:var(--primary-dark);
+  background:var(--primary-light);
+  padding:3px 10px;
+  border-radius:999px;
+  margin-bottom:10px;
+}
+.flashcard-scene{
+  perspective:1200px;
+  height:280px;
+  margin-bottom:14px;
+}
+.flashcard{
+  position:relative;
+  width:100%;
+  height:100%;
+  transform-style:preserve-3d;
+  transition:transform .5s cubic-bezier(.4,.2,.2,1);
+  cursor:pointer;
+}
+.flashcard.flipped{transform:rotateY(180deg);}
+.face{
+  position:absolute;
+  inset:0;
+  border-radius:var(--radius);
+  backface-visibility:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:26px;
+  text-align:center;
+  box-shadow:var(--shadow);
+}
+.face-front{
+  background:linear-gradient(135deg,var(--primary) 0%, #8b7ffb 100%);
+  color:#fff;
+  font-size:1.05rem;
+  font-weight:700;
+  line-height:1.6;
+}
+.face-back{
+  background:var(--card-bg);
+  color:var(--text);
+  transform:rotateY(180deg);
+  font-size:0.95rem;
+  line-height:1.7;
+  border:1px solid var(--border);
+}
+.face-hint{
+  position:absolute;
+  bottom:10px;
+  right:14px;
+  font-size:0.62rem;
+  opacity:.65;
+}
+.flash-controls{
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
+}
+.flash-controls button{
+  flex:1;
+  min-height:44px;
+  border:none;
+  border-radius:var(--radius-sm);
+  background:var(--card-bg);
+  box-shadow:var(--shadow);
+  font-size:0.85rem;
+  font-weight:700;
+  color:var(--text);
+  cursor:pointer;
+}
+.flash-controls button:active{transform:scale(.97);}
+.srs-buttons{
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
+}
+.srs-buttons button{
+  flex:1;
+  min-height:48px;
+  border:none;
+  border-radius:var(--radius-sm);
+  font-size:0.85rem;
+  font-weight:800;
+  cursor:pointer;
+  color:#fff;
+}
+.srs-buttons .btn-no{background:var(--wrong);}
+.srs-buttons .btn-yes{background:var(--correct);}
+.srs-buttons button:active{transform:scale(.97);}
+.srs-info{
+  text-align:center;
+  font-size:0.72rem;
+  color:var(--text-sub);
+  margin-bottom:4px;
+}
+
+/* ---- Quiz ---- */
+.quiz-wrap{display:none;}
+.quiz-wrap.active{display:block;}
+.quiz-topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+}
+.score-badges{display:flex;gap:6px;}
+.score-badge{
+  font-size:0.72rem;
+  font-weight:700;
+  padding:4px 10px;
+  border-radius:999px;
+}
+.score-badge.correct{background:#dcfce7;color:#16a34a;}
+.score-badge.wrong{background:#fee2e2;color:#dc2626;}
+.q-cat-tag{
+  font-size:0.68rem;
+  font-weight:700;
+  color:var(--primary-dark);
+  background:var(--primary-light);
+  padding:3px 10px;
+  border-radius:999px;
+}
+.q-card{
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px;
+  margin-bottom:12px;
+}
+.q-text{
+  font-size:1rem;
+  font-weight:700;
+  line-height:1.6;
+  margin-bottom:16px;
+}
+.choice-btn{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:100%;
+  min-height:48px;
+  text-align:left;
+  border:1.5px solid var(--border);
+  background:#fff;
+  border-radius:var(--radius-sm);
+  padding:10px 14px;
+  margin-bottom:8px;
+  font-size:0.86rem;
+  color:var(--text);
+  cursor:pointer;
+  line-height:1.4;
+}
+.choice-btn:active{transform:scale(.99);}
+.choice-btn .label{
+  flex:0 0 auto;
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  background:var(--primary-light);
+  color:var(--primary-dark);
+  font-size:0.72rem;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.choice-btn.correct{border-color:var(--correct);background:#f0fdf4;}
+.choice-btn.correct .label{background:var(--correct);color:#fff;}
+.choice-btn.wrong{border-color:var(--wrong);background:#fef2f2;}
+.choice-btn.wrong .label{background:var(--wrong);color:#fff;}
+.choice-btn[disabled]{cursor:default;}
+
+.explanation{
+  background:var(--primary-light);
+  border-radius:var(--radius-sm);
+  padding:14px;
+  font-size:0.82rem;
+  line-height:1.6;
+  color:var(--text);
+  margin-bottom:14px;
+  display:none;
+}
+.explanation.show{display:block;}
+.explanation b{color:var(--primary-dark);}
+
+.next-btn{
+  display:none;
+  width:100%;
+  min-height:48px;
+  border:none;
+  border-radius:var(--radius-sm);
+  background:var(--primary);
+  color:#fff;
+  font-size:0.92rem;
+  font-weight:800;
+  cursor:pointer;
+  margin-bottom:16px;
+}
+.next-btn.show{display:block;}
+.next-btn:active{transform:scale(.98);}
+
+.result-screen{
+  display:none;
+  text-align:center;
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:36px 20px;
+}
+.result-screen.show{display:block;}
+.result-pct{
+  font-size:2.6rem;
+  font-weight:900;
+  color:var(--primary-dark);
+  margin-bottom:4px;
+}
+.result-msg{
+  font-size:0.9rem;
+  color:var(--text-sub);
+  margin-bottom:20px;
+}
+.result-screen button{
+  min-height:48px;
+  padding:0 24px;
+  border:none;
+  border-radius:var(--radius-sm);
+  background:var(--primary);
+  color:#fff;
+  font-size:0.9rem;
+  font-weight:800;
+  cursor:pointer;
+}
+
+/* ---- Review ---- */
+.review-wrap{display:none;}
+.review-wrap.active{display:block;}
+.review-empty{
+  text-align:center;
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:40px 20px;
+}
+.review-empty .emoji{font-size:2.6rem;margin-bottom:10px;}
+.review-empty h3{margin:0 0 6px;font-size:1.05rem;color:var(--primary-dark);}
+.review-empty p{margin:0;font-size:0.82rem;color:var(--text-sub);line-height:1.6;}
+.review-intro{
+  font-size:0.78rem;
+  color:var(--text-sub);
+  margin-bottom:10px;
+  line-height:1.6;
+}
+.review-intro b{color:var(--wrong);}
+
+footer{
+  text-align:center;
+  margin-top:20px;
+  padding-top:10px;
+}
+footer a{
+  font-size:0.68rem;
+  color:var(--text-sub);
+  text-decoration:underline;
+  cursor:pointer;
+}
+
+.hidden{display:none !important;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <h1>📘 ITパスポート 勉強アプリ</h1>
+    <p>エビングハウスの忘却曲線にもとづいて復習タイミングをお知らせします</p>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat-card"><div class="num" id="statTotal">0</div><div class="label">総問題数</div></div>
+    <div class="stat-card due"><div class="num" id="statDue">0</div><div class="label">本日の復習</div></div>
+    <div class="stat-card"><div class="num" id="statNew">0</div><div class="label">未学習</div></div>
+    <div class="stat-card mastered"><div class="num" id="statMastered">0</div><div class="label">マスター済み</div></div>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="flash">📇 カード</button>
+    <button class="mode-tab" data-mode="quiz">✅ 4択</button>
+    <button class="mode-tab" data-mode="review">🔁 復習<span class="badge" id="reviewBadge">0</span></button>
+  </div>
+
+  <div class="cat-filter" id="catFilter"></div>
+
+  <!-- Flashcard -->
+  <div class="flash-wrap active" id="flashWrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span class="flash-cat-tag" id="flashCat">-</span>
+      <span style="font-size:0.72rem;color:var(--text-sub);" id="flashCount">0 / 0</span>
+    </div>
+    <div class="flashcard-scene">
+      <div class="flashcard" id="flashcard">
+        <div class="face face-front">
+          <div id="flashQ">読み込み中...</div>
+          <div class="face-hint">タップで裏返す</div>
+        </div>
+        <div class="face face-back">
+          <div id="flashA"></div>
+          <div class="face-hint">タップで表に戻す</div>
+        </div>
+      </div>
+    </div>
+    <div class="srs-info" id="flashSrsInfo"></div>
+    <div class="srs-buttons">
+      <button class="btn-no" id="btnFlashNo">❌ まだ覚えていない</button>
+      <button class="btn-yes" id="btnFlashYes">✅ 覚えた</button>
+    </div>
+    <div class="flash-controls">
+      <button id="btnFlashPrev">◀ 前へ</button>
+      <button id="btnFlashShuffle">🔀 シャッフル</button>
+      <button id="btnFlashNext">次へ ▶</button>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-wrap" id="quizWrap">
+    <div class="quiz-topbar">
+      <span class="q-cat-tag" id="quizCat">-</span>
+      <div class="score-badges">
+        <span class="score-badge correct" id="quizCorrectBadge">○ 0</span>
+        <span class="score-badge wrong" id="quizWrongBadge">✕ 0</span>
+      </div>
+    </div>
+    <div class="progress-row">
+      <span id="quizProgressLabel">0 / 0</span>
+      <div class="progress-bar-track"><div class="progress-bar-fill" id="quizProgressFill" style="width:0%"></div></div>
+    </div>
+    <div class="q-card">
+      <div class="q-text" id="quizQ">読み込み中...</div>
+      <div id="quizChoices"></div>
+    </div>
+    <div class="explanation" id="quizExp"></div>
+    <button class="next-btn" id="btnQuizNext">次の問題 ▶</button>
+
+    <div class="result-screen" id="quizResult">
+      <div class="result-pct" id="resultPct">0%</div>
+      <div class="result-msg" id="resultMsg"></div>
+      <button id="btnQuizRetry">もう一度挑戦する</button>
+    </div>
+  </div>
+
+  <!-- Review -->
+  <div class="review-wrap" id="reviewWrap">
+    <div class="review-intro" id="reviewIntro"></div>
+    <div id="reviewQuizArea"></div>
+    <div class="review-empty" id="reviewEmpty">
+      <div class="emoji">🎉</div>
+      <h3>今日の復習はありません！</h3>
+      <p>すべての問題が復習期限内です。<br>「カード」や「4択」で新しい問題に挑戦しましょう。</p>
+    </div>
+  </div>
+
+  <footer>
+    <a id="btnReset">学習データをリセットする</a>
+  </footer>
+
+</div>
+
+<script>
+/* ===================== 問題データ ===================== */
+const ALL_QUESTIONS = [
+/* ---- 経営戦略 ---- */
+{cat:"経営戦略", q:"PDCAサイクルとは何か説明せよ", a:"Plan（計画）→Do（実行）→Check（評価）→Act（改善）を繰り返す、業務改善のための管理手法。", choices:["Plan→Do→Check→Actを繰り返す業務改善手法","予算編成のためのフレームワーク","組織図を作成する手法","在庫管理の手法"], correct:0, exp:"PDCAサイクルは計画・実行・評価・改善を継続的に回すことで業務品質を高める代表的なマネジメント手法。"},
+{cat:"経営戦略", q:"SWOT分析で使われる4つの視点の組み合わせとして正しいものはどれか", a:"強み（Strength）・弱み（Weakness）・機会（Opportunity）・脅威（Threat）の4つ。", choices:["強み・弱み・機会・脅威","売上・利益・費用・資産","人材・物資・資金・情報","品質・コスト・納期・安全"], correct:0, exp:"SWOT分析は自社の内部環境（強み・弱み）と外部環境（機会・脅威）を整理して戦略を立てる手法。"},
+{cat:"経営戦略", q:"「コアコンピタンス」とは何を指す用語か", a:"他社に真似できない、企業の中核となる強み・技術力のこと。", choices:["他社が模倣困難な自社の中核的な強み","経営陣の中核メンバー","主力製品のブランド名","本社機能を担う部署"], correct:0, exp:"コアコンピタンスは競合優位性の源泉となる、企業独自の技術やノウハウを指す。"},
+{cat:"経営戦略", q:"特定の狭い市場に経営資源を集中させる戦略を何というか", a:"ニッチ戦略。大手が参入しにくい隙間市場に特化する戦略。", choices:["ニッチ戦略","コストリーダーシップ戦略","多角化戦略","垂直統合戦略"], correct:0, exp:"ニッチ戦略は特定の狭い市場セグメントに集中し、その分野で優位性を確立する戦略。"},
+{cat:"経営戦略", q:"企業の合併・買収を意味する略語はどれか", a:"M&A（Mergers and Acquisitions）。", choices:["M&A","IPO","KPI","OEM"], correct:0, exp:"M&Aは合併（Mergers）と買収（Acquisitions）の総称で、他社の経営権取得などを指す。"},
+{cat:"経営戦略", q:"財務・顧客・業務プロセス・学習と成長の4つの視点で経営を評価する手法は何か", a:"バランススコアカード（BSC）。", choices:["バランススコアカード","SWOT分析","ファイブフォース分析","バリューチェーン分析"], correct:0, exp:"バランススコアカードは4つの視点から経営目標の達成度をバランスよく評価するフレームワーク。"},
+{cat:"経営戦略", q:"業界の競争構造を「新規参入の脅威」「代替品の脅威」など5つの要因で分析する手法は何か", a:"ファイブフォース分析（5F分析）。", choices:["ファイブフォース分析","SWOT分析","PPM分析","ABC分析"], correct:0, exp:"ファイブフォース分析はマイケル・ポーターが提唱した、業界の競争環境を5つの力で分析するフレームワーク。"},
+
+/* ---- 法務 ---- */
+{cat:"法務", q:"プログラムの著作権について正しいものはどれか", a:"プログラムはアイデアではなく表現（ソースコード）そのものが著作物として保護される。", choices:["ソースコードの具体的な表現が著作物として保護される","アルゴリズムのアイデア自体が保護される","登録しないと著作権は発生しない","著作権の保護期間は発行後10年間"], correct:0, exp:"著作権法ではプログラムの具体的な記述（表現）が保護対象で、アルゴリズムなどのアイデア自体は保護されない。"},
+{cat:"法務", q:"個人情報保護法で「個人情報」に該当するものはどれか", a:"氏名や生年月日など、特定の個人を識別できる情報。", choices:["生存する個人を識別できる氏名や顔写真などの情報","法人の登記情報","匿名化され誰か特定できない統計データ","公開されている企業の売上高"], correct:0, exp:"個人情報保護法における個人情報とは、生存する個人を識別できる情報を指す。"},
+{cat:"法務", q:"労働基準法で定められている法定労働時間は原則1日何時間、週何時間か", a:"1日8時間、週40時間が原則。", choices:["1日8時間・週40時間","1日6時間・週30時間","1日10時間・週50時間","1日7時間・週35時間"], correct:0, exp:"労働基準法では法定労働時間を原則1日8時間・週40時間と定めている。"},
+{cat:"法務", q:"下請代金支払遅延等防止法（下請法）の目的として正しいものはどれか", a:"親事業者による下請事業者への不当な代金減額や支払遅延を防ぐこと。", choices:["親事業者から下請事業者への不当な取引を防止する","下請事業者間の価格カルテルを防止する","消費者を欺く表示を防止する","労働者の長時間労働を防止する"], correct:0, exp:"下請法は立場の弱い下請事業者を保護し、親事業者による代金減額・支払遅延などを規制する法律。"},
+{cat:"法務", q:"不正アクセス禁止法で禁止されている行為はどれか", a:"他人のID・パスワードを無断で使用してシステムにアクセスする行為。", choices:["他人のIDやパスワードを無断利用してシステムに侵入する行為","自社システムの脆弱性を診断する行為","許可を得たペネトレーションテスト","自分のアカウントのパスワードを変更する行為"], correct:0, exp:"不正アクセス禁止法は、他人の識別符号（ID・パスワード）を無断利用した不正アクセス行為などを禁止する。"},
+{cat:"法務", q:"特許権の存続期間は出願からおおむね何年か", a:"原則として出願から20年。", choices:["出願から20年","登録から5年","公開から10年","発明から50年"], correct:0, exp:"特許権の存続期間は原則として特許出願の日から20年である。"},
+{cat:"法務", q:"企業における「コンプライアンス」とは何を意味するか", a:"法令や社会規範を遵守すること。", choices:["法令や社会的規範を遵守すること","顧客満足度を高めること","競合他社との差別化を図ること","業務効率を最大化すること"], correct:0, exp:"コンプライアンスは法令遵守を意味し、企業が事業活動において法律や倫理規範を守ることを指す。"},
+
+/* ---- 財務会計 ---- */
+{cat:"財務会計", q:"貸借対照表（B/S）は何を表す財務諸表か", a:"ある時点における企業の資産・負債・純資産の状態を表す。", choices:["ある時点の資産・負債・純資産の状態","一定期間の収益と費用","一定期間の現金の増減","株主への配当の内訳"], correct:0, exp:"貸借対照表（バランスシート）は決算日など特定時点の財政状態を示す財務諸表。"},
+{cat:"財務会計", q:"損益計算書（P/L）は何を表す財務諸表か", a:"一定期間における企業の収益・費用・利益の状況を表す。", choices:["一定期間の収益・費用・利益の状況","ある時点の資産と負債の残高","現金の出入りの記録のみ","株主構成の変化"], correct:0, exp:"損益計算書は一会計期間の経営成績（収益・費用・利益）を示す財務諸表。"},
+{cat:"財務会計", q:"固定資産の取得コストを耐用年数にわたって費用配分する会計処理を何というか", a:"減価償却。", choices:["減価償却","棚卸資産評価","引当金計上","繰延資産処理"], correct:0, exp:"減価償却は建物や機械などの固定資産の取得原価を、使用期間にわたり費用として配分する会計処理。"},
+{cat:"財務会計", q:"自己資本に対してどれだけ利益を上げたかを示す指標はどれか", a:"ROE（自己資本利益率）。", choices:["ROE（自己資本利益率）","ROA（総資産利益率）","PER（株価収益率）","流動比率"], correct:0, exp:"ROE（Return On Equity）は自己資本に対する当期純利益の割合を示す収益性の指標。"},
+{cat:"財務会計", q:"売上高と総費用が一致し、利益がゼロになる売上高の水準を何というか", a:"損益分岐点。", choices:["損益分岐点","限界利益","変動費","固定費"], correct:0, exp:"損益分岐点は利益がゼロになる売上高の水準で、それを上回れば利益、下回れば損失となる。"},
+{cat:"財務会計", q:"キャッシュフロー計算書で区分される3つの活動区分はどれか", a:"営業活動・投資活動・財務活動によるキャッシュフロー。", choices:["営業活動・投資活動・財務活動","仕入活動・製造活動・販売活動","計画・実行・評価","資産・負債・純資産"], correct:0, exp:"キャッシュフロー計算書は現金の増減を営業・投資・財務の3活動に区分して表示する。"},
+{cat:"財務会計", q:"在庫が一定量を下回ったら一定量を発注する在庫管理方式を何というか", a:"発注点方式（定量発注方式）。", choices:["発注点方式","定期発注方式","ジャストインタイム方式","ABC分析"], correct:0, exp:"発注点方式は在庫量があらかじめ定めた発注点を下回った時点で、決まった量を発注する方式。"},
+
+/* ---- マーケティング ---- */
+{cat:"マーケティング", q:"マーケティングの4Pの組み合わせとして正しいものはどれか", a:"Product（製品）・Price（価格）・Place（流通）・Promotion（販売促進）。", choices:["Product・Price・Place・Promotion","People・Process・Physical evidence・Product","Plan・Do・Check・Act","Push・Pull・Public・Private"], correct:0, exp:"マーケティングミックスの4Pは製品・価格・流通・販売促進の4要素から成る。"},
+{cat:"マーケティング", q:"市場を顧客の属性などで細分化することを何というか", a:"セグメンテーション（市場細分化）。", choices:["セグメンテーション","ポジショニング","ターゲティング","ブランディング"], correct:0, exp:"セグメンテーションは年齢・地域・嗜好などの基準で市場を細分化するマーケティング手法。"},
+{cat:"マーケティング", q:"口コミによって商品情報が消費者間で自然に拡散する現象を利用した手法を何というか", a:"バイラルマーケティング（口コミ効果）。", choices:["バイラルマーケティング","テレマーケティング","ダイレクトマーケティング","アフィリエイトマーケティング"], correct:0, exp:"バイラルマーケティングはSNSなどを通じて口コミのように情報が自然拡散する仕組みを利用した手法。"},
+{cat:"マーケティング", q:"顧客との関係を管理し、長期的な関係構築を目指す手法・システムを何というか", a:"CRM（Customer Relationship Management：顧客関係管理）。", choices:["CRM","SCM","ERP","POS"], correct:0, exp:"CRMは顧客情報を一元管理し、良好な関係を継続的に構築・維持するための手法・システム。"},
+{cat:"マーケティング", q:"POSシステムの主な目的はどれか", a:"販売時点で商品・数量・金額などのデータを収集し、売上や在庫を管理すること。", choices:["販売時点の情報を収集し売上・在庫を管理する","従業員の勤怠を管理する","顧客からの問い合わせに自動応答する","生産ラインを自動制御する"], correct:0, exp:"POS（Point Of Sales）システムはレジでの販売データをリアルタイムに収集・分析する仕組み。"},
+{cat:"マーケティング", q:"実店舗とネット通販など複数の販売チャネルを統合し、顧客にシームレスな購買体験を提供する戦略を何というか", a:"オムニチャネル戦略。", choices:["オムニチャネル","マルチチャネル","シングルチャネル","O2O"], correct:0, exp:"オムニチャネルは複数の販売・顧客接点を統合し、顧客がどのチャネルからでも一貫した体験を得られるようにする戦略。"},
+{cat:"マーケティング", q:"商品やサービスに独自の価値・イメージを付与し、他社製品と差別化する活動を何というか", a:"ブランディング（ブランド戦略）。", choices:["ブランディング","コモディティ化","ダンピング","カニバリゼーション"], correct:0, exp:"ブランディングは商品・企業に独自の価値やイメージを付与し、競合との差別化を図る活動。"},
+
+/* ---- システム戦略 ---- */
+{cat:"システム戦略", q:"業務の記録・処理を目的とした従来型の基幹システムを表す用語はどれか", a:"SoR（System of Record）。", choices:["SoR（System of Record）","SoE（System of Engagement）","SoI（System of Insight）","BPR"], correct:0, exp:"SoRは受発注や会計など記録・処理を目的とした基幹システム、SoEは顧客との関係構築を重視するシステム。"},
+{cat:"システム戦略", q:"業務プロセスを根本的に見直し、抜本的に再設計する取り組みを何というか", a:"BPR（Business Process Re-engineering）。", choices:["BPR","ERP","SLA","KPI"], correct:0, exp:"BPRは既存の業務プロセスを根本から見直し、効率化・最適化のために再設計する取り組み。"},
+{cat:"システム戦略", q:"経営戦略に基づいて情報システムの整備方針を定める計画を何というか", a:"情報システム戦略（IT戦略）。", choices:["情報システム戦略","事業継続計画（BCP）","品質保証計画","財務戦略"], correct:0, exp:"情報システム戦略は経営戦略の実現に向けて、情報システムをどう整備・活用するかを定める計画。"},
+{cat:"システム戦略", q:"システム調達の際、発注者が提案してほしい内容をベンダーに提示する文書を何というか", a:"RFP（Request For Proposal：提案依頼書）。", choices:["RFP（提案依頼書）","RFI（情報提供依頼書）","SLA（サービスレベル合意書）","NDA（秘密保持契約）"], correct:0, exp:"RFPは発注者がベンダーに具体的な提案を依頼するために要件や条件をまとめた文書。"},
+{cat:"システム戦略", q:"企業の基幹業務（会計・人事・生産・販売など）を統合的に管理するシステムを何というか", a:"ERP（Enterprise Resource Planning：企業資源計画）。", choices:["ERP","CRM","SCM","MRP"], correct:0, exp:"ERPは企業の様々な基幹業務を統合的に管理し、経営資源を効率的に活用するためのシステム。"},
+{cat:"システム戦略", q:"OSやミドルウェアを含む実行環境をサービスとして提供するクラウドの形態はどれか", a:"PaaS（Platform as a Service）。", choices:["PaaS","SaaS","IaaS","DaaS"], correct:0, exp:"PaaSはアプリケーション実行に必要なOS・ミドルウェア等のプラットフォームを提供するクラウドサービス形態。"},
+{cat:"システム戦略", q:"災害等の緊急事態が発生した際に、事業を継続・早期復旧させるための計画を何というか", a:"BCP（Business Continuity Plan：事業継続計画）。", choices:["BCP","ERP","SLA","QCD"], correct:0, exp:"BCPは災害や事故などの緊急事態においても重要な事業を継続、あるいは早期復旧させるための計画。"},
+
+/* ---- 開発技術 ---- */
+{cat:"開発技術", q:"要件定義→設計→開発→テストの順に、原則後戻りせず進める開発モデルを何というか", a:"ウォーターフォールモデル。", choices:["ウォーターフォールモデル","アジャイル開発","スパイラルモデル","プロトタイピングモデル"], correct:0, exp:"ウォーターフォールモデルは各工程を順番に進め、原則として前工程に後戻りしない開発手法。"},
+{cat:"開発技術", q:"短い開発サイクルを繰り返しながら、変化に柔軟に対応する開発手法を何というか", a:"アジャイル開発。", choices:["アジャイル開発","ウォーターフォールモデル","V字モデル","ウォーターフォール型保守"], correct:0, exp:"アジャイル開発は短期間の反復（イテレーション）を繰り返し、仕様変更に柔軟に対応する開発手法。"},
+{cat:"開発技術", q:"アジャイル開発の代表的な手法で、スプリントと呼ばれる短い期間を繰り返す手法を何というか", a:"スクラム。", choices:["スクラム","XP（エクストリームプログラミング）","ウォーターフォール","RAD"], correct:0, exp:"スクラムはアジャイル開発のフレームワークの一つで、スプリントと呼ばれる短い期間を繰り返して開発を進める。"},
+{cat:"開発技術", q:"プログラムの最小単位（モジュール）ごとに行うテストを何というか", a:"単体テスト（ユニットテスト）。", choices:["単体テスト","結合テスト","システムテスト","運用テスト"], correct:0, exp:"単体テストはモジュールや関数など、プログラムの最小単位を対象に行うテスト。"},
+{cat:"開発技術", q:"プログラムの内部構造・ロジックに着目してテストケースを設計する手法はどれか", a:"ホワイトボックステスト。", choices:["ホワイトボックステスト","ブラックボックステスト","回帰テスト","負荷テスト"], correct:0, exp:"ホワイトボックステストは内部のプログラム構造・処理経路に着目してテストケースを設計する手法。"},
+{cat:"開発技術", q:"外部から見た動作を変えずに、プログラムの内部構造を改善することを何というか", a:"リファクタリング。", choices:["リファクタリング","デバッグ","マイグレーション","コンパイル"], correct:0, exp:"リファクタリングはソフトウェアの外部の振る舞いを変えずに、内部のコード構造を整理・改善すること。"},
+{cat:"開発技術", q:"データとその操作をひとまとめにして扱う、オブジェクト指向の特徴を何というか", a:"カプセル化。", choices:["カプセル化","継承","ポリモーフィズム","抽象化"], correct:0, exp:"カプセル化はデータ（属性）と処理（メソッド）を一つのオブジェクトにまとめ、内部を隠蔽する仕組み。"},
+
+/* ---- プロジェクトマネジメント ---- */
+{cat:"プロジェクト管理", q:"プロジェクトマネジメントの知識体系を集大成したガイドを何というか", a:"PMBOK（Project Management Body Of Knowledge）。", choices:["PMBOK","ITIL","COBIT","CMMI"], correct:0, exp:"PMBOKはプロジェクトマネジメントに関する知識やプロセスを体系的にまとめたガイドブック。"},
+{cat:"プロジェクト管理", q:"プロジェクトの作業を階層的に分解し一覧化した図を何というか", a:"WBS（Work Breakdown Structure：作業分解構成図）。", choices:["WBS","ガントチャート","PERT図","組織図"], correct:0, exp:"WBSはプロジェクトの成果物を作成するために必要な作業を階層的に分解して整理した図。"},
+{cat:"プロジェクト管理", q:"プロジェクトの作業スケジュールを横棒で視覚的に表す図を何というか", a:"ガントチャート。", choices:["ガントチャート","WBS","PERT図","特性要因図"], correct:0, exp:"ガントチャートは作業ごとの開始・終了時期を横棒グラフで表し、スケジュール管理に用いられる。"},
+{cat:"プロジェクト管理", q:"プロジェクトの全工程の中で、最も所要期間が長く遅延が全体に影響する経路を何というか", a:"クリティカルパス。", choices:["クリティカルパス","バッファ","マイルストーン","スコープ"], correct:0, exp:"クリティカルパスは開始から終了までの経路の中で最も時間がかかる経路で、この経路が遅れるとプロジェクト全体が遅延する。"},
+{cat:"プロジェクト管理", q:"プロジェクト管理における「QCD」が表す3要素はどれか", a:"品質（Quality）・コスト（Cost）・納期（Delivery）。", choices:["品質・コスト・納期","計画・実行・評価","人・物・金","強み・弱み・機会"], correct:0, exp:"QCDはプロジェクトや生産管理において重視される品質・コスト・納期の3要素の頭文字。"},
+{cat:"プロジェクト管理", q:"プロジェクトにおけるリスクへの対応方法として「保険をかける」ことは何に分類されるか", a:"リスク移転（転嫁）。", choices:["リスク移転","リスク回避","リスク受容","リスク低減"], correct:0, exp:"保険などによって損失発生時の負担を第三者に移す対応は、リスク移転（転嫁）と呼ばれる。"},
+{cat:"プロジェクト管理", q:"プロジェクトに利害関係を持つ人（顧客・利用者・経営者など）を総称して何というか", a:"ステークホルダー（利害関係者）。", choices:["ステークホルダー","プロジェクトマネージャ","ベンダー","エンドユーザー"], correct:0, exp:"ステークホルダーはプロジェクトの実行や結果に影響を受ける、または影響を与えるすべての関係者を指す。"},
+
+/* ---- サービスマネジメント ---- */
+{cat:"サービス管理", q:"ITサービスマネジメントのベストプラクティスをまとめたフレームワークを何というか", a:"ITIL（Information Technology Infrastructure Library）。", choices:["ITIL","PMBOK","ISMS","COBIT"], correct:0, exp:"ITILはITサービスの企画・設計・運用に関するベストプラクティス集で、世界的に広く参照されている。"},
+{cat:"サービス管理", q:"サービス提供者と利用者の間で、サービス品質の水準を取り決めた合意文書を何というか", a:"SLA（Service Level Agreement：サービスレベル合意書）。", choices:["SLA","NDA","RFP","MOU"], correct:0, exp:"SLAはサービスの可用性や応答時間など、提供すべき品質水準を明文化した合意書。"},
+{cat:"サービス管理", q:"サービスが正常に提供できない状態を、できるだけ早く復旧させるプロセスを何というか", a:"インシデント管理。", choices:["インシデント管理","問題管理","変更管理","構成管理"], correct:0, exp:"インシデント管理はサービスの中断・障害が発生した際に、迅速な復旧を図るプロセス。"},
+{cat:"サービス管理", q:"インシデントの根本原因を特定し、再発防止を図るプロセスを何というか", a:"問題管理。", choices:["問題管理","インシデント管理","リリース管理","キャパシティ管理"], correct:0, exp:"問題管理はインシデントの根本原因を調査・特定し、恒久的な対策によって再発を防止するプロセス。"},
+{cat:"サービス管理", q:"利用者からの問い合わせや障害報告を一元的に受け付ける窓口を何というか", a:"サービスデスク（ヘルプデスク）。", choices:["サービスデスク","データセンター","コールセンター","ヘルプライン"], correct:0, exp:"サービスデスクはユーザーからの問い合わせ・障害報告などを受け付ける単一の窓口としての役割を持つ。"},
+{cat:"サービス管理", q:"システムが停止せずに稼働し続けられる度合いを表す指標を何というか", a:"可用性（アベイラビリティ）。", choices:["可用性","保守性","信頼性","拡張性"], correct:0, exp:"可用性はシステムが必要な時に正常に利用できる度合いを示す指標で、稼働率などで表される。"},
+{cat:"サービス管理", q:"情報システムが適切に管理・運用されているかを第三者的立場から検証することを何というか", a:"システム監査。", choices:["システム監査","システム設計","システムテスト","システム移行"], correct:0, exp:"システム監査は情報システムのガバナンスやコントロールが適切かを、独立した立場から評価・検証する活動。"},
+
+/* ---- 基礎理論 ---- */
+{cat:"基礎理論", q:"2進数の「1010」を10進数に変換すると何か", a:"10。", choices:["10","8","12","5"], correct:0, exp:"1010(2) = 1×8 + 0×4 + 1×2 + 0×1 = 10(10)。"},
+{cat:"基礎理論", q:"後入れ先出し（LIFO）のデータ構造を何というか", a:"スタック。", choices:["スタック","キュー","リスト","木構造"], correct:0, exp:"スタックは最後に入れたデータを最初に取り出すLIFO（Last In First Out）のデータ構造。"},
+{cat:"基礎理論", q:"先入れ先出し（FIFO）のデータ構造を何というか", a:"キュー。", choices:["キュー","スタック","ヒープ","配列"], correct:0, exp:"キューは最初に入れたデータを最初に取り出すFIFO（First In First Out）のデータ構造。"},
+{cat:"基礎理論", q:"アルゴリズムの効率を表す指標で、データ量に対する処理時間の増加の度合いを何というか", a:"計算量（オーダー、O記法）。", choices:["計算量（オーダー）","メモリ使用量","処理速度","応答時間"], correct:0, exp:"計算量はデータ量の増加に対して処理時間や必要リソースがどれだけ増加するかを表す指標。"},
+{cat:"基礎理論", q:"論理積（AND）演算の結果が真（1）になるのはどのような場合か", a:"入力が両方とも真（1）の場合のみ。", choices:["入力が両方とも真の場合のみ","入力のどちらか一方が真の場合","入力が両方とも偽の場合","常に真になる"], correct:0, exp:"AND（論理積）は両方の入力が真（1）のときにのみ結果が真（1）になる論理演算。"},
+{cat:"基礎理論", q:"整列済みの配列に対して、中央の値と比較しながら範囲を絞り込んで探索する方法を何というか", a:"二分探索（バイナリサーチ）。", choices:["二分探索","線形探索","ハッシュ探索","深さ優先探索"], correct:0, exp:"二分探索は整列済みデータの中央値と目的の値を比較し、探索範囲を半分ずつ絞り込む効率的な探索方法。"},
+{cat:"基礎理論", q:"世界中の文字を統一的に扱うために策定された文字コード規格を何というか", a:"Unicode。", choices:["Unicode","ASCII","JIS","シフトJIS"], correct:0, exp:"Unicodeは世界中の文字を一つの体系で扱えるよう標準化された文字コード規格。"},
+
+/* ---- コンピュータ構成 ---- */
+{cat:"コンピュータ構成", q:"コンピュータの中で演算や制御を行う中心的な装置を何というか", a:"CPU（Central Processing Unit：中央処理装置）。", choices:["CPU","メモリ","HDD","GPU"], correct:0, exp:"CPUはプログラムの命令を解釈・実行し、コンピュータ全体を制御する中心的な処理装置。"},
+{cat:"コンピュータ構成", q:"CPUの処理速度の目安となる、1秒間に刻む信号の回数を表す指標はどれか", a:"クロック周波数（Hz）。", choices:["クロック周波数","キャッシュ容量","メモリ容量","ビット数"], correct:0, exp:"クロック周波数はCPU内部の同期信号の周波数で、数値が高いほど一般的に処理速度が速い傾向がある。"},
+{cat:"コンピュータ構成", q:"CPUが直接読み書きできる、処理中のプログラムやデータを一時的に格納する装置を何というか", a:"主記憶装置（メインメモリ、RAM）。", choices:["主記憶装置","補助記憶装置","キャッシュメモリ","レジスタ"], correct:0, exp:"主記憶装置（メモリ）はCPUが直接アクセスできる記憶装置で、実行中のプログラムやデータを一時的に保持する。"},
+{cat:"コンピュータ構成", q:"CPUと主記憶装置の速度差を埋めるために設けられる高速な記憶装置を何というか", a:"キャッシュメモリ。", choices:["キャッシュメモリ","仮想メモリ","レジスタ","ストレージ"], correct:0, exp:"キャッシュメモリはCPUと主記憶の速度差を緩和するために両者の間に置かれる高速小容量の記憶装置。"},
+{cat:"コンピュータ構成", q:"マウスやキーボードのように、コンピュータにデータを入力する装置を何というか", a:"入力装置。", choices:["入力装置","出力装置","記憶装置","演算装置"], correct:0, exp:"入力装置はユーザーがコンピュータにデータや指示を与えるための装置で、キーボードやマウスなどが該当する。"},
+{cat:"コンピュータ構成", q:"1台の物理サーバー上に複数の仮想的なサーバーを構築する技術を何というか", a:"サーバー仮想化。", choices:["サーバー仮想化","クラスタリング","ロードバランシング","ミラーリング"], correct:0, exp:"サーバー仮想化は1台の物理マシン上に複数の仮想マシン（VM）を作り、独立したOS環境として動作させる技術。"},
+{cat:"コンピュータ構成", q:"システムの一部に障害が発生しても、全体として機能を維持し続ける設計思想を何というか", a:"フォールトトレランス。", choices:["フォールトトレランス","フェイルセーフ","フールプルーフ","フォールバック"], correct:0, exp:"フォールトトレランスは部品や装置の一部が故障しても、システム全体の機能を維持できるように設計する考え方（例：多重化）。"},
+
+/* ---- ネットワーク ---- */
+{cat:"ネットワーク", q:"インターネットで標準的に使われる通信プロトコル群を何というか", a:"TCP/IP。", choices:["TCP/IP","HTTP","FTP","SMTP"], correct:0, exp:"TCP/IPはインターネットにおける通信の標準となるプロトコル群の総称。"},
+{cat:"ネットワーク", q:"ネットワーク上の機器を一意に識別するために割り当てられる番号を何というか", a:"IPアドレス。", choices:["IPアドレス","MACアドレス","ポート番号","ドメイン名"], correct:0, exp:"IPアドレスはネットワーク上の機器を識別するために割り当てられる数値のアドレス。"},
+{cat:"ネットワーク", q:"ドメイン名をIPアドレスに変換する仕組みを何というか", a:"DNS（Domain Name System）。", choices:["DNS","DHCP","NAT","VPN"], correct:0, exp:"DNSはwww.example.comのようなドメイン名と、対応するIPアドレスを相互に変換する仕組み。"},
+{cat:"ネットワーク", q:"ネットワークに接続した機器へ自動的にIPアドレスを割り当てるプロトコルを何というか", a:"DHCP（Dynamic Host Configuration Protocol）。", choices:["DHCP","DNS","SMTP","POP3"], correct:0, exp:"DHCPはネットワークに新たに接続した機器に対し、自動的にIPアドレス等の設定情報を割り当てるプロトコル。"},
+{cat:"ネットワーク", q:"会社や家庭など限られた範囲内のネットワークを何というか", a:"LAN（Local Area Network）。", choices:["LAN","WAN","VPN","SNS"], correct:0, exp:"LANはオフィスや家庭など、比較的狭い範囲に構築されるネットワークを指す。"},
+{cat:"ネットワーク", q:"Webサイトの通信を暗号化して安全に行うためのプロトコルはどれか", a:"HTTPS。", choices:["HTTPS","HTTP","FTP","Telnet"], correct:0, exp:"HTTPSはHTTP通信をSSL/TLSによって暗号化し、安全にデータをやり取りするためのプロトコル。"},
+{cat:"ネットワーク", q:"メールをサーバー間で送信する際に使われる代表的なプロトコルはどれか", a:"SMTP（Simple Mail Transfer Protocol）。", choices:["SMTP","POP3","IMAP","FTP"], correct:0, exp:"SMTPはメールをサーバー間で送信する際に用いられるプロトコル。受信にはPOP3やIMAPが使われる。"},
+
+/* ---- セキュリティ ---- */
+{cat:"セキュリティ", q:"暗号化と復号に同じ鍵を使う暗号方式を何というか", a:"共通鍵暗号方式。", choices:["共通鍵暗号方式","公開鍵暗号方式","ハッシュ関数","デジタル署名"], correct:0, exp:"共通鍵暗号方式は暗号化・復号に同一の鍵を用いる方式で、処理速度は速いが鍵の共有・管理に課題がある。"},
+{cat:"セキュリティ", q:"暗号化と復号に異なる鍵（公開鍵と秘密鍵）を使う暗号方式を何というか", a:"公開鍵暗号方式。", choices:["公開鍵暗号方式","共通鍵暗号方式","ハッシュ関数","ワンタイムパスワード"], correct:0, exp:"公開鍵暗号方式は公開鍵で暗号化したデータを対応する秘密鍵でのみ復号できる方式で、鍵配送問題を解決する。"},
+{cat:"セキュリティ", q:"実在する企業を装った偽のメールやWebサイトで、ID・パスワードなどを盗み取る攻撃を何というか", a:"フィッシング詐欺。", choices:["フィッシング詐欺","ランサムウェア","DoS攻撃","SQLインジェクション"], correct:0, exp:"フィッシング詐欺は金融機関などを装った偽サイトに誘導し、個人情報や認証情報を盗み取る攻撃手法。"},
+{cat:"セキュリティ", q:"感染したコンピュータ内のファイルを暗号化し、復号と引き換えに金銭を要求するマルウェアを何というか", a:"ランサムウェア。", choices:["ランサムウェア","ワーム","トロイの木馬","スパイウェア"], correct:0, exp:"ランサムウェアはファイルを暗号化して使用不能にし、復号のための身代金（ランサム）を要求するマルウェア。"},
+{cat:"セキュリティ", q:"パスワードに加えてスマートフォンへの通知確認など、複数の要素を組み合わせて認証することを何というか", a:"多要素認証（MFA）。", choices:["多要素認証","シングルサインオン","バイオメトリクス認証","ワンタイムパスワード"], correct:0, exp:"多要素認証は「知識情報」「所持情報」「生体情報」のうち複数を組み合わせて本人確認の精度を高める認証方式。"},
+{cat:"セキュリティ", q:"外部ネットワークと内部ネットワークの境界に設置し、不正な通信を遮断する仕組みを何というか", a:"ファイアウォール。", choices:["ファイアウォール","ウイルス対策ソフト","VPN","プロキシサーバー"], correct:0, exp:"ファイアウォールは通信を監視し、あらかじめ定めたルールに基づいて不正なアクセスを遮断するセキュリティ機構。"},
+{cat:"セキュリティ", q:"人の心理的な隙や行動のミスにつけ込んで機密情報を入手する手法を何というか", a:"ソーシャルエンジニアリング。", choices:["ソーシャルエンジニアリング","ブルートフォース攻撃","ゼロデイ攻撃","バックドア"], correct:0, exp:"ソーシャルエンジニアリングは技術的手段ではなく、なりすまし電話や盗み見など人の心理・行動の隙を突いて情報を盗む手法。"},
+
+/* ---- データベース ---- */
+{cat:"データベース", q:"データを行と列から成る「表（テーブル）」形式で管理するデータベースを何というか", a:"リレーショナルデータベース（RDB）。", choices:["リレーショナルデータベース","オブジェクト指向データベース","階層型データベース","NoSQLデータベース"], correct:0, exp:"リレーショナルデータベースはデータを行と列の表形式で管理し、表同士を関連付けて扱うデータベース方式。"},
+{cat:"データベース", q:"リレーショナルデータベースを操作するための言語を何というか", a:"SQL（Structured Query Language）。", choices:["SQL","HTML","Python","JSON"], correct:0, exp:"SQLはリレーショナルデータベースに対してデータの検索・追加・更新・削除などを行うための問い合わせ言語。"},
+{cat:"データベース", q:"テーブル内の各行を一意に識別するための項目を何というか", a:"主キー（プライマリキー）。", choices:["主キー","外部キー","インデックス","候補キー"], correct:0, exp:"主キーはテーブル内でレコードを一意に特定できる項目（列）で、重複やNULLを許さない。"},
+{cat:"データベース", q:"データの重複や矛盾を排除するためにテーブルを整理する手法を何というか", a:"正規化。", choices:["正規化","インデックス化","トランザクション処理","バックアップ"], correct:0, exp:"正規化はデータの冗長性や更新時の不整合を排除するために、テーブル構造を段階的に整理する設計手法。"},
+{cat:"データベース", q:"データベースにおいて、複数の処理を「すべて実行」か「すべて取り消し」のどちらかにまとめる単位を何というか", a:"トランザクション。", choices:["トランザクション","インデックス","ビュー","ストアドプロシージャ"], correct:0, exp:"トランザクションは一連の処理を分割不可能な単位として扱い、途中で失敗した場合は全体を取り消す（ロールバック）仕組み。"},
+{cat:"データベース", q:"あるテーブルの列が、別テーブルの主キーを参照している項目を何というか", a:"外部キー（foreign key）。", choices:["外部キー","主キー","複合キー","代理キー"], correct:0, exp:"外部キーは他のテーブルの主キーを参照することで、テーブル同士の関連（リレーション）を表す項目。"},
+{cat:"データベース", q:"システム障害等に備え、データベースの内容を別の場所に複製しておくことを何というか", a:"バックアップ。", choices:["バックアップ","リストア","マイグレーション","レプリケーション"], correct:0, exp:"バックアップは障害や誤操作によるデータ消失に備え、データを複製・保存しておく作業。復旧作業はリストアと呼ぶ。"},
+];
+
+/* ===================== SRS（間隔反復）ロジック ===================== */
+const SRS_KEY = "itpassport_srs_v1";
+const INTERVAL_DAYS = [1, 2, 4, 7, 15, 30]; // box 0〜5 に対応する復習間隔（エビングハウスの忘却曲線を参考に設定）
+
+function todayStr(offsetDays=0){
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().slice(0,10);
+}
+function daysBetween(a,b){
+  return Math.round((new Date(a) - new Date(b)) / 86400000);
+}
+
+let srsData = {};
+function loadSRS(){
+  try{
+    srsData = JSON.parse(localStorage.getItem(SRS_KEY) || "{}");
+  }catch(e){ srsData = {}; }
+}
+function saveSRS(){
+  try{ localStorage.setItem(SRS_KEY, JSON.stringify(srsData)); }catch(e){}
+}
+function getEntry(id){
+  return srsData[id] || {box:-1, next:null};
+}
+function isDue(id){
+  const e = getEntry(id);
+  if(e.box === -1) return true; // 未学習は常に復習対象
+  return e.next <= todayStr();
+}
+function isMastered(id){
+  return getEntry(id).box >= 5;
+}
+function isNew(id){
+  return getEntry(id).box === -1;
+}
+function markResult(id, correct){
+  let e = getEntry(id);
+  if(correct){
+    e.box = Math.min((e.box === -1 ? -1 : e.box) + 1, 5);
+    if(e.box < 0) e.box = 0;
+  } else {
+    e.box = 0;
+  }
+  e.next = todayStr(INTERVAL_DAYS[e.box]);
+  e.lastSeen = todayStr();
+  srsData[id] = e;
+  saveSRS();
+}
+function srsInfoText(id){
+  const e = getEntry(id);
+  if(e.box === -1) return "📝 まだ学習していません";
+  if(e.box >= 5 && e.next > todayStr()) {
+    const d = daysBetween(e.next, todayStr());
+    return `🏆 マスター済み（次回復習まで${d}日）`;
+  }
+  if(e.next <= todayStr()) return "🔁 本日復習予定です";
+  const d = daysBetween(e.next, todayStr());
+  return `📅 次回復習まで${d}日（Box ${e.box+1}/6）`;
+}
+
+/* ===================== 状態 ===================== */
+loadSRS();
+
+const CATEGORIES = [...new Set(ALL_QUESTIONS.map(q => q.cat))];
+ALL_QUESTIONS.forEach((q, i) => { q.id = i; });
+
+let currentMode = "flash";
+let currentCat = "すべて";
+
+let flashList = [];
+let flashIndex = 0;
+
+let quizList = [];
+let quizIndex = 0;
+let quizCorrectCount = 0;
+let quizWrongCount = 0;
+let quizAnswered = false;
+
+let reviewList = [];
+let reviewIndex = 0;
+let reviewCorrectCount = 0;
+let reviewWrongCount = 0;
+let reviewAnswered = false;
+
+/* ===================== ユーティリティ ===================== */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function filteredByCat(cat){
+  return cat === "すべて" ? ALL_QUESTIONS.slice() : ALL_QUESTIONS.filter(q => q.cat === cat);
+}
+
+/* ===================== 統計表示 ===================== */
+function updateStats(){
+  const total = ALL_QUESTIONS.length;
+  const due = ALL_QUESTIONS.filter(q => isDue(q.id)).length;
+  const newCount = ALL_QUESTIONS.filter(q => isNew(q.id)).length;
+  const mastered = ALL_QUESTIONS.filter(q => isMastered(q.id)).length;
+  document.getElementById("statTotal").textContent = total;
+  document.getElementById("statDue").textContent = due;
+  document.getElementById("statNew").textContent = newCount;
+  document.getElementById("statMastered").textContent = mastered;
+  document.getElementById("reviewBadge").textContent = due;
+}
+
+/* ===================== カテゴリフィルター ===================== */
+function renderCatFilter(){
+  const wrap = document.getElementById("catFilter");
+  wrap.innerHTML = "";
+  const cats = ["すべて", ...CATEGORIES];
+  cats.forEach(cat => {
+    const btn = document.createElement("button");
+    btn.className = "cat-chip" + (cat === currentCat ? " active" : "");
+    btn.textContent = cat;
+    btn.onclick = () => {
+      currentCat = cat;
+      renderCatFilter();
+      resetModeState();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+/* ===================== モード切り替え ===================== */
+document.querySelectorAll(".mode-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    currentMode = tab.dataset.mode;
+    document.querySelectorAll(".mode-tab").forEach(t => t.classList.toggle("active", t === tab));
+    document.getElementById("flashWrap").classList.toggle("active", currentMode === "flash");
+    document.getElementById("quizWrap").classList.toggle("active", currentMode === "quiz");
+    document.getElementById("reviewWrap").classList.toggle("active", currentMode === "review");
+    resetModeState();
+  });
+});
+
+function resetModeState(){
+  if(currentMode === "flash") initFlash();
+  if(currentMode === "quiz") initQuiz();
+  if(currentMode === "review") initReview();
+  updateStats();
+}
+
+/* ===================== フラッシュカード ===================== */
+function initFlash(){
+  flashList = filteredByCat(currentCat);
+  flashIndex = 0;
+  renderFlash();
+}
+function renderFlash(){
+  const card = document.getElementById("flashcard");
+  card.classList.remove("flipped");
+  if(flashList.length === 0){
+    document.getElementById("flashQ").textContent = "このカテゴリには問題がありません";
+    document.getElementById("flashA").textContent = "";
+    document.getElementById("flashCat").textContent = currentCat;
+    document.getElementById("flashCount").textContent = "0 / 0";
+    document.getElementById("flashSrsInfo").textContent = "";
+    return;
+  }
+  const q = flashList[flashIndex];
+  document.getElementById("flashQ").textContent = q.q;
+  document.getElementById("flashA").textContent = q.a;
+  document.getElementById("flashCat").textContent = q.cat;
+  document.getElementById("flashCount").textContent = `${flashIndex+1} / ${flashList.length}`;
+  document.getElementById("flashSrsInfo").textContent = srsInfoText(q.id);
+}
+document.getElementById("flashcard").addEventListener("click", () => {
+  document.getElementById("flashcard").classList.toggle("flipped");
+});
+document.getElementById("btnFlashPrev").addEventListener("click", () => {
+  if(flashList.length === 0) return;
+  flashIndex = (flashIndex - 1 + flashList.length) % flashList.length;
+  renderFlash();
+});
+document.getElementById("btnFlashNext").addEventListener("click", () => {
+  if(flashList.length === 0) return;
+  flashIndex = (flashIndex + 1) % flashList.length;
+  renderFlash();
+});
+document.getElementById("btnFlashShuffle").addEventListener("click", () => {
+  flashList = shuffle(flashList);
+  flashIndex = 0;
+  renderFlash();
+});
+document.getElementById("btnFlashYes").addEventListener("click", () => {
+  if(flashList.length === 0) return;
+  markResult(flashList[flashIndex].id, true);
+  updateStats();
+  document.getElementById("btnFlashNext").click();
+});
+document.getElementById("btnFlashNo").addEventListener("click", () => {
+  if(flashList.length === 0) return;
+  markResult(flashList[flashIndex].id, false);
+  updateStats();
+  document.getElementById("btnFlashNext").click();
+});
+
+/* ===================== 4択クイズ（共通ロジック） ===================== */
+function buildQuizCard(q, containerId, onAnswer){
+  const container = document.getElementById(containerId);
+  const shuffledChoices = shuffle(q.choices.map((text, idx) => ({text, isCorrect: idx === q.correct})));
+  let html = `
+    <div class="q-card">
+      <div class="q-text">${q.q}</div>
+      <div id="${containerId}_choices"></div>
+    </div>
+    <div class="explanation" id="${containerId}_exp"><b>解説：</b>${q.exp}</div>
+    <button class="next-btn" id="${containerId}_next">次の問題 ▶</button>
+  `;
+  container.innerHTML = html;
+  const labels = ["A","B","C","D"];
+  const choicesWrap = document.getElementById(`${containerId}_choices`);
+  shuffledChoices.forEach((c, i) => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.innerHTML = `<span class="label">${labels[i]}</span><span>${c.text}</span>`;
+    btn.addEventListener("click", () => {
+      if(btn.disabled) return;
+      Array.from(choicesWrap.children).forEach((b, idx) => {
+        b.disabled = true;
+        if(shuffledChoices[idx].isCorrect) b.classList.add("correct");
+      });
+      if(!c.isCorrect) btn.classList.add("wrong");
+      document.getElementById(`${containerId}_exp`).classList.add("show");
+      document.getElementById(`${containerId}_next`).classList.add("show");
+      onAnswer(c.isCorrect);
+    });
+    choicesWrap.appendChild(btn);
+  });
+  return document.getElementById(`${containerId}_next`);
+}
+
+/* ---- 4択クイズモード ---- */
+function initQuiz(){
+  quizList = shuffle(filteredByCat(currentCat));
+  quizIndex = 0;
+  quizCorrectCount = 0;
+  quizWrongCount = 0;
+  document.getElementById("quizResult").classList.remove("show");
+  document.getElementById("quizWrap").querySelectorAll(".q-card, .explanation, .next-btn").forEach(el => {});
+  renderQuiz();
+}
+function updateQuizTopbar(){
+  document.getElementById("quizCorrectBadge").textContent = `○ ${quizCorrectCount}`;
+  document.getElementById("quizWrongBadge").textContent = `✕ ${quizWrongCount}`;
+  document.getElementById("quizProgressLabel").textContent = `${Math.min(quizIndex+1, quizList.length)} / ${quizList.length}`;
+  const pct = quizList.length ? (quizIndex / quizList.length) * 100 : 0;
+  document.getElementById("quizProgressFill").style.width = pct + "%";
+}
+function renderQuiz(){
+  document.getElementById("quizResult").classList.remove("show");
+  document.getElementById("quizQ").parentElement.style.display = "";
+  const bodyArea = document.querySelector("#quizWrap");
+  if(quizList.length === 0){
+    document.getElementById("quizCat").textContent = currentCat;
+    updateQuizTopbar();
+    return;
+  }
+  if(quizIndex >= quizList.length){
+    showQuizResult();
+    return;
+  }
+  const q = quizList[quizIndex];
+  document.getElementById("quizCat").textContent = q.cat;
+  updateQuizTopbar();
+
+  // 静的レイアウトを使い回す（初回のみ生成済みのためquiz用にはoriginal DOMを直接操作）
+  document.getElementById("quizQ").textContent = q.q;
+  const choicesWrap = document.getElementById("quizChoices");
+  choicesWrap.innerHTML = "";
+  document.getElementById("quizExp").classList.remove("show");
+  document.getElementById("quizExp").innerHTML = `<b>解説：</b>${q.exp}`;
+  document.getElementById("btnQuizNext").classList.remove("show");
+
+  const labels = ["A","B","C","D"];
+  const shuffledChoices = shuffle(q.choices.map((text, idx) => ({text, isCorrect: idx === q.correct})));
+  quizAnswered = false;
+  shuffledChoices.forEach((c, i) => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.innerHTML = `<span class="label">${labels[i]}</span><span>${c.text}</span>`;
+    btn.addEventListener("click", () => {
+      if(quizAnswered) return;
+      quizAnswered = true;
+      Array.from(choicesWrap.children).forEach((b, idx) => {
+        b.disabled = true;
+        if(shuffledChoices[idx].isCorrect) b.classList.add("correct");
+      });
+      if(!c.isCorrect) btn.classList.add("wrong");
+      if(c.isCorrect) quizCorrectCount++; else quizWrongCount++;
+      markResult(q.id, c.isCorrect);
+      updateStats();
+      updateQuizTopbar();
+      document.getElementById("quizExp").classList.add("show");
+      document.getElementById("btnQuizNext").classList.add("show");
+    });
+    choicesWrap.appendChild(btn);
+  });
+}
+document.getElementById("btnQuizNext").addEventListener("click", () => {
+  quizIndex++;
+  renderQuiz();
+});
+function showQuizResult(){
+  document.getElementById("quizQ").parentElement.style.display = "none";
+  document.getElementById("quizExp").classList.remove("show");
+  document.getElementById("btnQuizNext").classList.remove("show");
+  const total = quizCorrectCount + quizWrongCount;
+  const pct = total ? Math.round((quizCorrectCount/total)*100) : 0;
+  document.getElementById("resultPct").textContent = pct + "%";
+  let msg = "";
+  if(pct >= 90) msg = "🎉 素晴らしい！この調子で合格を目指しましょう";
+  else if(pct >= 70) msg = "👍 いい調子です。間違えた問題は「復習」で再チェックしましょう";
+  else msg = "💪 復習を重ねて定着させましょう。焦らず一問ずつ！";
+  document.getElementById("resultMsg").textContent = `正解 ${quizCorrectCount} / ${total} 問　${msg}`;
+  document.getElementById("quizResult").classList.add("show");
+}
+document.getElementById("btnQuizRetry").addEventListener("click", () => {
+  initQuiz();
+});
+
+/* ---- 今日の復習モード（エビングハウスの忘却曲線に基づく出題） ---- */
+function initReview(){
+  const dueQs = filteredByCat(currentCat).filter(q => isDue(q.id));
+  // 「未学習」より「復習期限が過ぎているもの」を優先し、超過日数が多い順に出題
+  dueQs.sort((a,b) => {
+    const ea = getEntry(a.id), eb = getEntry(b.id);
+    const overdueA = ea.box === -1 ? 9999 : daysBetween(todayStr(), ea.next);
+    const overdueB = eb.box === -1 ? 9999 : daysBetween(todayStr(), eb.next);
+    return overdueB - overdueA;
+  });
+  reviewList = dueQs;
+  reviewIndex = 0;
+  reviewCorrectCount = 0;
+  reviewWrongCount = 0;
+  renderReview();
+}
+function renderReview(){
+  const introEl = document.getElementById("reviewIntro");
+  const emptyEl = document.getElementById("reviewEmpty");
+  const areaEl = document.getElementById("reviewQuizArea");
+
+  if(reviewList.length === 0){
+    introEl.textContent = "";
+    emptyEl.style.display = "block";
+    areaEl.innerHTML = "";
+    return;
+  }
+  emptyEl.style.display = "none";
+
+  if(reviewIndex >= reviewList.length){
+    const total = reviewCorrectCount + reviewWrongCount;
+    const pct = total ? Math.round((reviewCorrectCount/total)*100) : 0;
+    introEl.textContent = "";
+    areaEl.innerHTML = `
+      <div class="result-screen show">
+        <div class="result-pct">${pct}%</div>
+        <div class="result-msg">今日の復習が完了しました！（正解 ${reviewCorrectCount} / ${total} 問）<br>エビングハウスの忘却曲線に沿って、また明日以降お知らせします。</div>
+        <button id="btnReviewDone">閉じる</button>
+      </div>`;
+    document.getElementById("btnReviewDone").addEventListener("click", () => {
+      document.querySelector('.mode-tab[data-mode="flash"]').click();
+    });
+    return;
+  }
+
+  introEl.innerHTML = `本日復習すべき問題は <b>${reviewList.length}問</b> です。忘却曲線に沿って優先度の高い順に出題します。`;
+
+  const q = reviewList[reviewIndex];
+  areaEl.innerHTML = `
+    <div class="quiz-topbar">
+      <span class="q-cat-tag">${q.cat}</span>
+      <div class="score-badges">
+        <span class="score-badge correct">○ ${reviewCorrectCount}</span>
+        <span class="score-badge wrong">✕ ${reviewWrongCount}</span>
+      </div>
+    </div>
+    <div class="progress-row">
+      <span>${reviewIndex+1} / ${reviewList.length}</span>
+      <div class="progress-bar-track"><div class="progress-bar-fill" style="width:${(reviewIndex/reviewList.length)*100}%"></div></div>
+    </div>
+    <div id="reviewCardArea"></div>
+  `;
+
+  const nextBtn = buildQuizCard(q, "reviewCardArea", (correct) => {
+    if(correct) reviewCorrectCount++; else reviewWrongCount++;
+    markResult(q.id, correct);
+    updateStats();
+  });
+  nextBtn.addEventListener("click", () => {
+    reviewIndex++;
+    renderReview();
+  });
+}
+
+/* ===================== リセット ===================== */
+document.getElementById("btnReset").addEventListener("click", () => {
+  if(confirm("学習履歴（復習スケジュール・進捗）をすべてリセットします。よろしいですか？")){
+    srsData = {};
+    saveSRS();
+    updateStats();
+    resetModeState();
+  }
+});
+
+/* ===================== 初期化 ===================== */
+renderCatFilter();
+resetModeState();
+</script>
+</body>
+</html>
